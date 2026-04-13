@@ -1,36 +1,32 @@
-# Cutefish Modified Project / Cutefish 改进版项目
+# Cutefish Modified Project / Cutefish 改进版
 
 ## 📌 Overview / 项目简介
 
-This is a customized and actively modified version of the Cutefish Desktop Environment.
+This is a customized and actively maintained version of the Cutefish Desktop Environment.
 
-这是一个基于 Cutefish 桌面环境的深度修改版本，包含多个组件的改进与重构。
+这是一个基于 Cutefish 桌面环境的深度修改与重构版本。
 
 ---
 
-## 🚀 Features / 特性
+## 🚀 Highlights / 项目亮点
 
-* Qt6 + Wayland migration (in progress)
+* Qt6 + Wayland migration (libcutefish)
 
-* Custom patches and enhancements
+* Modular architecture across multiple repositories
 
-* UI and behavior improvements
+* System-level improvements and patches
 
-* Modular repository structure
+* 完成 Qt6 + Wayland 迁移（libcutefish）
 
-* 正在进行 Qt6 + Wayland 移植
+* 多仓库模块化架构
 
-* 多组件补丁与功能增强
-
-* UI 和交互优化
-
-* 模块化仓库结构
+* 系统级修改与优化
 
 ---
 
 ## 📦 Repositories / 项目组件
 
-### 🧠 Core / 核心组件
+### 🧠 Core / 核心
 
 * https://github.com/yang10147/cutefish-core
 
@@ -47,38 +43,34 @@ This is a customized and actively modified version of the Cutefish Desktop Envir
 * https://github.com/yang10147/cutefish-filemanager
 * https://github.com/yang10147/cutefish-screenshot
 
-### 🔬 Experimental / 实验性项目
+### 🔬 Core Library (Qt6 + Wayland) / 核心库
 
 * https://github.com/yang10147/libcutefish
-  (Qt6 + Wayland port / Qt6 + Wayland 移植版本)
+
+### 🎨 Resources / 资源
+
+* https://github.com/yang10147/cutefish-icons
+* https://github.com/yang10147/cutefish-wallpapers
 
 ---
 
 ## 🧩 Modifications / 修改内容
 
-* Added custom patch modules
-
-* Improved system behavior
-
 * Refactored multiple components
 
-* Enhanced compatibility
+* Added patch-based extensions
 
-* 新增 patch 模块结构
+* Improved compatibility and behavior
 
-* 改进系统行为逻辑
+* 多组件重构
 
-* 重构多个核心组件
+* 引入 patch 模块机制
 
-* 提升兼容性
+* 提升兼容性与系统行为
 
 ---
 
 ## 📄 Documentation / 文档
-
-See:
-
-请查看：
 
 * `cutefish-archive.md`
 
@@ -88,30 +80,30 @@ See:
 
 (Work in progress)
 
-（正在整理中）
+（整理中）
 
 ---
 
 ## 📌 Notes / 说明
 
-This project is a personal modification and exploration of Cutefish.
+This project represents a personal continuation and enhancement of Cutefish.
 
-本项目为个人对 Cutefish 的修改与探索版本。
+本项目为对 Cutefish 的延续性开发与增强版本。
 
 ---
 
 ## ⭐ Future Plans / 未来计划
 
-* Complete Qt6 migration
+* Stabilize Qt6 + Wayland environment
 
-* Improve Wayland support
+* Improve usability and performance
 
-* Stabilize components
+* Expand feature set
 
-* 完成 Qt6 迁移
+* 完善 Qt6 + Wayland 稳定性
 
-* 完善 Wayland 支持
+* 提升体验与性能
 
-* 提升整体稳定性
+* 增强功能
 
 ---

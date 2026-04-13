@@ -1,5 +1,5 @@
-# CutefishOS Wayland 移植 — 归档文档
-> 已完成组件记录。新对话开始 libcutefish 移植时上传此文件。
+# CutefishOS Wayland 移植 — 归档文档（三期）
+> 一期 + 二期全部完成记录。新对话开始时上传此文件。
 
 ---
 
@@ -7,43 +7,44 @@
 
 ```
 OS:        CachyOS x86_64
-DE:        KDE Plasma 6（Wayland 会话）
+DE:        KDE Plasma 6 / GNOME（Wayland 会话，调试时切换到 GNOME 避免 KDE 冲突）
 Qt 版本:   6.10.2 / KDE Frameworks 6.24.0 / 内核 6.19.10-1s
 用户名:    yong / 主目录: /home/yong
-代理端口:  7890（克隆前需设置）
+代理端口:  7890（克隆前需设置 export https_proxy=http://127.0.0.1:7890）
 会话类型:  wayland
+下载目录:  ~/下载/（中文路径，tar xzf 时注意）
 ```
+
+---
 
 ## 重要背景知识
 
 - **FishUI**：Qt5 编译，Qt6 不可加载。所有 QML 必须完全去掉 FishUI，用原生 Qt6 替代。
-- **KWindowSystem**：Wayland 下窗口枚举/激活 API 不可用。PlasmaWindowManagement 协议仅对 `plasmashell` 开放，第三方程序被拒绝（KDE 安全限制）。
-- **交付方式**：Claude 打包 `.tar.gz`，解压后 cp 替换，再编译测试。tar 命令在下载目录执行。
+- **Theme 单例**：`qml/Theme.qml` 替代 FishUI，根类型 `Item`，singleton，子目录用 `import "../"` 访问。
+- **QT_QUICK_CONTROLS_STYLE=Basic**：main.cpp 最早处 setenv，在 QApplication 前。
+- **音频插件**：用 pactl 命令行，2秒轮询。
+- **settings-daemon 需手动启动**：`cutefish-settings-daemon &`
+- **KDE Plasma 调试冲突**：建议切换到 GNOME 会话调试 cutefish-settings。
 - **QML 编译进二进制**：修改 QML 后必须删除 `qrc_resources.cpp` 强制重编：
   ```bash
   rm ~/cutefish-settings/build/cutefish-settings_autogen/UVLADIE3JM/qrc_resources.cpp
   make -j$(nproc)
   sudo cp ~/cutefish-settings/build/cutefish-settings /usr/bin/cutefish-settings
   ```
-- **Theme 单例**：`qml/Theme.qml` 作为 FishUI 替代，根类型 `Item`，`qml/qmldir` 注册为 singleton，子目录用 `import "../"` 访问。
-- **QT_QUICK_CONTROLS_STYLE=Basic**：必须在 main.cpp 最早处 `setenv` 设置，在 QApplication 创建前。
-- **ListModel 在自定义组件内报错**：改用 JS 数组，delegate 里用 `modelData`。
-- **音频插件**：`org.kde.plasma.private.volume`，`HasVolume`→`hasVolume`，`PulseAudio.NormalVolume`→`65536`。
-- **settings-daemon 需手动启动**：`cutefish-settings-daemon &`（session 集成待后续处理）。
+- **git clone 认证问题**：用 curl 下载 zip 绕过：
+  ```bash
+  curl -x http://127.0.0.1:7890 -L https://github.com/cutefishos/xxx/archive/refs/heads/master.zip -o xxx.zip
+  ```
 
 ---
 
-## 已完成组件
+## 已完成组件总览
 
 ### cutefish-dock ✅
 LayerShellQt 贴底部，exclusiveZone 生效，图标/右键菜单正常。窗口激活/高亮空实现（PlasmaWindowManagement 协议限制）。
 
-关键改动：Qt5→Qt6/KF6，去 X11，加 LayerShellQt；QML 完全重写去 FishUI；手写 DBus adaptor；注册 icontheme image provider。
-
 ### cutefish-statusbar ✅
-LayerShellQt 贴顶部，系统托盘/时钟/关机菜单/控制中心正常。**音量滑块**改用 `pactl` 命令行实现（原 DBus 接口不存在）。亮度滑块依赖 settings-daemon 运行。窗口标题空实现（同 dock 限制）。
-
-关键改动：同 dock 移植策略；`volume.cpp` 完全重写用 QProcess 调 pactl，2 秒轮询同步外部音量变化。
+LayerShellQt 贴顶部，系统托盘/时钟/关机菜单/控制中心正常。音量滑块用 pactl 实现，亮度滑块依赖 settings-daemon。
 
 ### cutefish-core 各子组件 ✅
 
@@ -53,7 +54,7 @@ LayerShellQt 贴顶部，系统托盘/时钟/关机菜单/控制中心正常。*
 | shutdown-ui | Qt5→Qt6，去 FishUI/GraphicalEffects，纯深色渐变背景 |
 | settings-daemon | 去所有 X11/XCB；mouse/touchpad 改用 kwinrc+KWin DBus；theme 去 XResources |
 | screen-brightness | Qt5→Qt6，源码无需修改 |
-| notificationd | Qt5→Qt6/KF6，去 KWindowSystem X11 调用，去 FishUI，注册 icontheme provider |
+| notificationd | Qt5→Qt6/KF6，去 KWindowSystem X11，去 FishUI，注册 icontheme provider |
 | gmenuproxy | Qt5→Qt6/KF6，去 XCB，窗口属性 no-op |
 | powerman | Qt5→Qt6/KF6，去 XCB/DPMS，DPMS 调用 no-op |
 | polkit-agent | Qt5→Qt6，PolkitQt5→PolkitQt6，去 FishUI，拖动改 startSystemMove() |
@@ -61,31 +62,32 @@ LayerShellQt 贴顶部，系统托盘/时钟/关机菜单/控制中心正常。*
 | clipboard | Qt5→Qt6，QApplication→QGuiApplication |
 
 ### cutefish-screenshot ✅
-通过 XDG Desktop Portal 截图（Wayland 兼容）。剪贴板功能已修复。
+通过 XDG Desktop Portal 截图（Wayland 兼容）。
 
 ### cutefish-launcher ✅
 ### cutefish-screenlocker ✅
-
 ### cutefish-filemanager ✅
-文件列表/右键菜单/重命名/双击打开均正常。
+### cutefish-icons ✅（纯文件安装，无 Qt 依赖）
+### cutefish-wallpapers ✅（纯文件安装，无 Qt 依赖）
 
-### cutefish-settings ✅（网络三件套/User 除外）
+---
 
-**编译方法：**
+## cutefish-settings ✅ 全部完成
+
+### 编译方法
 ```bash
 cd ~/cutefish-settings/build
 cmake .. -DCMAKE_INSTALL_PREFIX=/usr
 rm cutefish-settings_autogen/UVLADIE3JM/qrc_resources.cpp
-make -j$(nproc) && sudo cp build/cutefish-settings /usr/bin/cutefish-settings
+make -j$(nproc) && sudo cp cutefish-settings /usr/bin/cutefish-settings
 ```
 
-**已完成页面：** About / Notification / Power / Proxy / Touchpad / Fonts / DateTime / DefaultApp / Battery / Dock / Language / Display（亮度+缩放）/ Appearance / Wallpaper / Sound / Cursor（图标占位）
+### 已完成页面
+About / Notification / Power / Proxy / Touchpad / Fonts / DateTime / DefaultApp /
+Battery / Dock / Language / Display（亮度+缩放）/ Appearance / Wallpaper / Sound /
+Cursor（图标占位）/ User / WLAN / **Wired** / **Bluetooth**
 
-**跳过页面：**
-- WLAN / Wired / Bluetooth → 依赖 `Cutefish.NetworkManagement` Qt5 插件（libcutefish 移植目标）
-- User → 依赖 `Cutefish.Accounts` Qt5 插件（libcutefish 移植目标）
-
-**关键 C++ 改动：**
+### 关键 C++ 改动
 - Qt5→Qt6/KF6，去 X11Extras
 - `background.cpp`：std::sort lambda 修复
 - `cursor/cursortheme.cpp`：QX11Info → Qt6 native interface
@@ -93,55 +95,152 @@ make -j$(nproc) && sudo cp build/cutefish-settings /usr/bin/cutefish-settings
 
 ---
 
+## libcutefish Qt6 移植 ✅
+
+### 仓库位置 / 编译方法
+```bash
+mkdir -p ~/libcutefish/build && cd ~/libcutefish/build
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+make -j$(nproc)
+sudo make install
+```
+
+### 已完成插件
+
+| 插件 | 状态 | 关键改动 |
+|------|------|---------|
+| `Cutefish.System` | ✅ | Qt5→Qt6，CMakeLists 仅改依赖名 |
+| `Cutefish.Accounts` | ✅ | Qt5→Qt6，`qt5_add_dbus_interface`→`qt6_add_dbus_interface` |
+| `Cutefish.NetworkManagement` | ✅ | KF5→KF6，见踩坑记录 |
+
+### 跳过插件
+
+| 插件 | 原因 |
+|------|------|
+| `Cutefish.Screen` | 已用 kscreen-doctor 绕过 |
+| `Cutefish.Audio` | statusbar 已用 pactl 实现 |
+| `Cutefish.Bluez` | Bluetooth 页面改用系统 KDE 插件，不再需要 |
+| `Cutefish.Mpris` | 暂不需要 |
+
+---
+
+## ⚠️ 踩坑详细记录
+
+### 坑1：libcutefish 根 CMakeLists.txt 的 qmake 查找方式
+Qt5 写法 `get_target_property(QT_QMAKE_EXECUTABLE ...)` 在 Qt6 报错。
+
+**修复：**
+```cmake
+find_program(QT_QMAKE_EXECUTABLE NAMES qmake6 qmake)
+execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_QML
+    OUTPUT_VARIABLE INSTALL_QMLDIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+```
+
+### 坑2：networkmanagement 的 WITH_MODEMMANAGER_SUPPORT 宏
+CachyOS 无 `kf6-modemmanager-qt`。改可选后仍不够，因为 sed 误操作导致双重 `#if`。
+
+**最终解决：** 直接删掉整行：
+```bash
+sed -i '/add_definitions(-DWITH_MODEMMANAGER_SUPPORT)/d' ~/libcutefish/networkmanagement/CMakeLists.txt
+```
+注意：不要用 `=0` 方式，会重定义警告。
+
+### 坑3：appletproxymodel.cpp 的 filterRegExp → filterRegularExpression
+`QRegularExpression` 没有 `isEmpty()`，需用 `.pattern().isEmpty()`。
+
+### 坑4：Hideable.qml 有无用的 QtGraphicalEffects import
+删掉 `import QtGraphicalEffects 1.0` 那行即可，内容完全没用到。
+
+### 坑5：UserDelegateItem.qml 的 Switch Component.onCompleted 问题
+Qt6 里 `Layout.alignment` 与 `Component.onCompleted` 附加属性冲突，改用属性绑定：
+```qml
+checked: currentUser.automaticLogin
+onCheckedChanged: currentUser.automaticLogin = checked
+```
+
+### 坑6：WLAN/Main.qml 的 Component.onCompleted 位置问题
+根元素里写会报 `Non-existent attached object`，改用 Timer：
+```qml
+Timer {
+    interval: 10200; repeat: true; running: control.visible
+    triggeredOnStart: true
+    onTriggered: handler.requestScan()
+}
+```
+
+### 坑7：RegExpValidator → RegularExpressionValidator
+```qml
+validator: RegularExpressionValidator { regularExpression: /^.../ }
+```
+
+### 坑8：FishUI.Window 对话框替换
+ConnectDialog / NewNetworkDialog / PairDialog 原来继承 `FishUI.Window`，改用标准 `Dialog`：
+```qml
+Dialog {
+    modal: true
+    x: parent ? (parent.width - width) / 2 : 0
+    y: parent ? (parent.height - height) / 2 : 0
+    function show() { open() }  // 兼容原来的 show() 调用
+}
+```
+
+### 坑9：Wired 页面原代码 bug
+原代码用 `wwanHwEnabled`/`wwanEnabled`/`enableWwan`（移动网络 API）控制有线网，是上游 bug。
+**修复：** 改用 `enabledConnections.networkingEnabled` / `handler.enableNetworking()`。
+
+### 坑10：Bluetooth 页面不用 Cutefish.Bluez
+`Bluetooth/Main.qml` 实际用的是系统 KDE 插件，直接替换：
+- `org.kde.bluezqt 1.0` — 蓝牙管理，device.connectToDevice() / disconnectFromDevice() / pair()
+- `org.kde.plasma.private.bluetooth 254.0` — DevicesProxyModel（注意版本号必须是 254.0）
+
+`DevicesProxyModel` 的 role 里**没有** `Connecting`/`Disconnecting`（那些在 `DevicesStateProxyModel` 里），
+直接用这两个 role 会得到 `undefined`，在 QML 里被当 true，导致 BusyIndicator 一直转。解决方法：不加 BusyIndicator。
+
+### 坑11：cutefish-settings QML 重编必须删 qrc_resources.cpp
+```bash
+rm ~/cutefish-settings/build/cutefish-settings_autogen/UVLADIE3JM/qrc_resources.cpp
+make -j$(nproc)
+sudo cp ~/cutefish-settings/build/cutefish-settings /usr/bin/cutefish-settings
+```
+
+---
+
 ## 已知遗留问题
 
 | 问题 | 原因 | 优先级 |
 |------|------|--------|
-| Dock/Statusbar 窗口激活/高亮缺失 | PlasmaWindowManagement 协议仅对 plasmashell 开放 | 低（待自有 compositor）|
-| Statusbar 背景色写死灰色 | 需壁纸服务配合 | 低 |
-| Display 分辨率/旋转不可用 | 依赖 Qt5 Cutefish.Screen 插件 | 中 |
-| Cursor 页面图标空白 | cursor.svg 未正确编译进 qrc | 低（视觉） |
-| settings-daemon 未自动启动 | 缺 autostart/session 集成 | 中（完整桌面必须） |
-| powerman/shutdown-ui 按钮无效 | 依赖 com.cutefish.Session | 待 session 集成 |
-| 光标被放大 | cupdatecursor 写入了光标配置 | 待查 |
+| Dock/Statusbar 窗口激活/高亮缺失 | PlasmaWindowManagement 协议限制 | 低 |
+| Statusbar 背景色写死灰色 | 需壁纸服务 | 低 |
+| Display 分辨率/旋转不可用 | 依赖 Cutefish.Screen | 中 |
+| Cursor 页面图标空白 | cursor.svg 未正确编译进 qrc | 低 |
+| settings-daemon 未自动启动 | 缺 autostart 集成 | 中 |
+| WLAN 信号图标为 Unicode | 原 SVG 依赖 FishUI 路径 | 低（视觉） |
+| Bluetooth 配对 agent 未实现 | PairDialog 为简化版，无 pin 确认回调 | 中 |
+
+---
 
 ## 跳过组件
 
 - `cutefish-core/xembed-sni-proxy` — 纯 X11
-- `cutefish-core/cupdatecursor` — 纯 X11
+- `cutefish-core/cupdatecursor` — 纯 X11（注意：运行会写入光标配置导致光标变大）
 - `cutefish-core/sddm-helper` — 暂不处理
-- `cutefish-calculator / cutefish-icons / cutefish-wallpapers / cutefish-qt-plugins`
+- `cutefish-calculator` — 独立工具，按需移植
+- `cutefish-qt-plugins` — 按需评估
 
 ---
 
-## 下一阶段：libcutefish 移植
+## 后续可考虑的方向
 
-### 目标
-libcutefish 是一组 Qt5 QML 插件，移植为 Qt6 后可解锁 cutefish-settings 的：
-- **WLAN / Wired / Bluetooth** 页面（依赖 `Cutefish.NetworkManagement`）
-- **User** 页面（依赖 `Cutefish.Accounts`）
-
-### 插件清单
-
-| 插件 | 功能 | 依赖 |
-|------|------|------|
-| `Cutefish.NetworkManagement` | 网络管理（WiFi/有线/蓝牙） | NetworkManagerQt, ModemManagerQt |
-| `Cutefish.Accounts` | 用户账户管理 | AccountsService DBus |
-| `Cutefish.Screen` | 屏幕管理 | KScreen（已用 kscreen-doctor 绕过，可跳过）|
-
-### 仓库
-```bash
-# 克隆前设置代理
-export https_proxy=http://127.0.0.1:7890
-git clone https://github.com/cutefishos/libcutefish.git ~/libcutefish
-```
-
-### 移植策略
-- Qt5→Qt6，KF5→KF6
-- NetworkManagerQt / ModemManagerQt 确认是否有 Qt6 版本（KF6 已包含）
-- `Cutefish.Screen` 优先级低，可跳过
+- **settings-daemon autostart**：写 `.desktop` 文件到 `~/.config/autostart/`
+- **Display 页面分辨率/旋转**：移植 `Cutefish.Screen` 或改用 kscreen DBus API
+- **Bluetooth 配对 agent**：实现完整 BluezQt agent，支持 pin 确认
+- **WLAN 信号强度图标**：改用真实 SVG（已有 qrc 资源）替代 Unicode
+- **Cutefish.Mpris**：如需媒体控制，移植此插件
+- **自有 Wayland compositor**：解锁窗口激活/高亮等功能
 
 ---
 
 *最后更新：2026-04-13*
-*当前进度：一期全部完成。下一步：libcutefish Qt6 移植，解锁网络三件套和 User 页面。*
+*当前进度：移植主体工作全部完成。cutefish-settings 所有页面可用。*
