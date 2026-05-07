@@ -1,6 +1,7 @@
 # Cutefish Modified Project / Cutefish 改进版
 
 ## 📌 Overview / 项目简介
+<img width="1714" height="1141" alt="04e42d18022c3db4b452655f14e95d0f" src="https://github.com/user-attachments/assets/a58387af-3406-4853-9c34-5da7df68d1ff" />
 
 This is a customized and actively maintained version of the Cutefish Desktop Environment.
 
