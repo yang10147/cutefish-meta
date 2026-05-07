@@ -129,7 +129,6 @@ This project represents a personal continuation and enhancement of Cutefish.
 
 #### 2. 系统功能 (System Functions)
 * **锁屏接管失效**：系统休眠或手动锁屏时，默认调用 SDDM 或 PLM 界面，而非原生的 `cutefish-screenlocker`（需修复 PAM 认证及核心组件的调用路径）。
-* **截图功能 (Screenshot)**：在 Wayland 环境下无法通过旧接口抓取像素，需适配 `xdg-desktop-portal` 或合成器私有协议。
 * **状态栏图标 (Statusbar)**：蓝牙小图标不显示。虽设置面板功能正常，但状态栏指示器组件（Indicator）在 Qt6 下存在加载异常。
 
 #### 3. 核心依赖 (Core Dependencies)
